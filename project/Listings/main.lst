@@ -1,0 +1,280 @@
+A51 MACRO ASSEMBLER  MAIN                                                                 06/10/2022 13:53:07 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\main.obj
+ASSEMBLER INVOKED BY: D:\Program_Files\Keil_v5\C51\BIN\A51.EXE main.asm SET(SMALL) DEBUG PRINT(.\Listings\main.lst) OBJE
+                      CT(.\Objects\main.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ; hien hai so57
+                       2     ; start
+                       3     ;===========================
+  0080                 4     num equ p0
+                       5     ;nghin bit p1.3
+  0092                 6     tram bit p1.2
+  0091                 7     chuc bit p1.1
+  0090                 8     donvi bit p1.0  
+                       9             
+  0040                10     inc_set equ 40h
+  0041                11     ok_set equ 41h
+  0042                12     button_inc equ 42h
+  0043                13     button_ok equ 43h
+  0044                14     num_set equ 44h
+  0045                15     test equ 45h
+                      16             
+  0096                17     start bit p1.6  ;allow converting 
+  0094                18     eoc bit p1.4    ;converting succeed
+  0095                19     ale bit p1.5    ;allow communicating
+                      20             
+  00A0                21     led bit p2.0
+  00A7                22     led_orange bit p2.7                      
+  0097                23     led_white bit p1.7                       
+0000                  24     org 00h
+                      25             
+0000 754000           26     mov inc_set, #0h                 
+0003 754100           27     mov ok_set, #0h          
+0006 754457           28     mov num_set, #87                 
+0009 75A000           29     mov p2, #000h            
+000C 759000           30     mov p1,#000h             
+000F 7400             31     mov a, #0h        
+                      32     
+0011                  33     SETUP:
+0011 C2D7             34     clr psw.7
+0013 D2A7             35     setb led_orange
+0015 85A042           36     mov button_inc, p2               
+0018 534202           37     anl button_inc, #02h             
+001B E542             38     mov a, button_inc
+001D 8540F0           39     mov b, inc_set
+0020 B5F018           40     cjne a,b, NOT_EQ_INC_SET                 
+                      41     ;cjne a,b, MAIN         //neu nut bam button_inc co gia tri khac voi inc_set thi nhay
+0023 E544             42     mov a, num_set
+0025 120087           43     lcall HEX_BCD
+0028 120099           44     lcall BCD_7SEG
+002B 1200AC           45     lcall SHOW
+                      46     
+002E 85A043           47     mov button_ok, p2                
+0031 534304           48     anl button_ok, #04h              
+0034 E543             49     mov a, button_ok
+                      50     ;mov b, ok_set
+0036 B40026           51     cjne a,#0, MAIN          
+0039 80D6             52     sjmp SETUP
+                      53     
+003B                  54     NOT_EQ_INC_SET:
+003B E542             55     mov a, button_inc
+003D B40005           56     cjne a, #0, INC_
+0040                  57     NEXT_1:
+A51 MACRO ASSEMBLER  MAIN                                                                 06/10/2022 13:53:07 PAGE     2
+
+0040 854240           58     mov inc_set, button_inc
+0043 80CC             59     JMP SETUP
+                      60     
+0045                  61     INC_:
+0045 E544             62     mov a, num_set
+0047 04               63     inc a
+0048 F544             64     mov num_set, a
+004A B4640E           65     cjne a, #100, NUM_SET_NOT_EQU
+004D                  66     NEXT_2:
+004D C3               67     clr c
+004E E544             68     mov a, num_set
+0050 120087           69     lcall HEX_BCD
+0053 120099           70     lcall BCD_7SEG
+0056 1200AC           71     lcall SHOW
+0059 80E5             72     jmp NEXT_1
+                      73     
+005B                  74     NUM_SET_NOT_EQU:
+005B 40F0             75     jc NEXT_2
+005D 806F             76     jmp LED_WARNING
+                      77     
+                      78     
+                      79     
+005F                  80     MAIN:
+005F 12006E           81     lcall CONVERT
+0062                  82     NEXT:
+0062 C3               83     clr c
+0063 120087           84     lcall HEX_BCD
+0066 120099           85     lcall BCD_7SEG
+0069 1200AC           86     lcall SHOW
+006C 80F1             87     sjmp MAIN
+                      88     
+                      89     
+                      90     
+                      91     
+006E                  92     CONVERT:
+006E D295             93     setb ale
+0070 C295             94     clr ale
+0072 D296             95     setb start
+0074 2094FD           96     jb eoc,$            
+0077 C296             97     clr start
+                      98     ;mov r7,#150
+                      99     ;de: lcall hienthi
+                     100     ;djnz r7,de
+0079 E5B0            101     mov a,p3
+007B 8544F0          102     mov b, num_set
+007E B5F001          103     cjne a,b,NOT_EQUAL
+0081 22              104     ret
+                     105     
+0082                 106     NOT_EQUAL:
+0082 40DE            107     jc NEXT
+                     108     ;jc MAIN
+0084 8048            109     jmp LED_WARNING
+0086 22              110     ret
+                     111     
+                     112     
+0087                 113     HEX_BCD:                        
+0087 75F064          114     mov b,#100
+008A 84              115     div ab                    
+                     116     ;mov 12h,a
+008B F532            117     mov 32h,a
+008D E5F0            118     mov a,b
+008F 75F00A          119     mov b,#10
+0092 84              120     div ab
+                     121     ;mov 11h,a
+0093 F531            122     mov 31h,a
+                     123     ;mov 10h,b
+A51 MACRO ASSEMBLER  MAIN                                                                 06/10/2022 13:53:07 PAGE     3
+
+0095 85F030          124     mov 30h,b
+0098 22              125     ret
+                     126     
+0099                 127     BCD_7SEG:
+0099 9000F6          128     mov dptr,#ma7seg
+                     129     ;mov a,10h
+009C E530            130     mov a,30h
+009E 93              131     movc a,@a + dptr
+                     132     ;mov 20h,a                               // 20h chua hang don vi
+009F F533            133     mov 33h,a       
+                     134     ;mov a,11h
+00A1 E531            135     mov a,31h
+00A3 93              136     movc a,@a + dptr                         
+                     137     ;mov 21h,a                              // 21h chua hang chuc
+00A4 F534            138     mov 34h,a
+                     139     ;mov a,12h
+00A6 E532            140     mov a,32h
+00A8 93              141     movc a,@a + dptr
+                     142     ;mov 22h,a                              // 22h chua hang tram
+00A9 F535            143     mov 35h,a
+00AB 22              144     ret
+                     145     
+                     146     
+00AC                 147     SHOW:
+                     148     ;mov num,20h
+00AC 853380          149     mov num,33h
+00AF D290            150     setb donvi
+00B1 1200DB          151     lcall DELAY_1
+00B4 5390F0          152     anl p1,#0f0h
+                     153     
+                     154     ;mov num,21h
+00B7 853480          155     mov num,34h
+00BA D291            156     setb chuc
+00BC 1200DB          157     lcall DELAY_1
+00BF 5390F0          158     anl p1,#0f0h       ; p1=----1111; hinh nhu la tat 4 bit cuoi thi moi dung
+                     159     
+                     160     ;mov num,22h
+00C2 853580          161     mov num,35h
+00C5 D292            162     setb tram
+00C7 1200DB          163     lcall DELAY_1
+00CA 5390F0          164     anl p1,#0f0h
+00CD 22              165     ret
+                     166     
+00CE                 167     LED_WARNING:
+00CE D2A0            168     setb led
+00D0 1200E9          169     lcall DELAY_2
+00D3 C2A0            170     clr led
+00D5 1200E9          171     lcall DELAY_2
+00D8 80F4            172     sjmp LED_WARNING
+00DA 22              173     ret
+                     174     
+00DB                 175     DELAY_1:
+                     176     ;mov r7,#0FFh                           //#250
+                     177     ;djnz r7,$
+00DB 7A01            178     mov r2,#1        ; 16 <=> 1s// con so nay sai nen khong phai la 1s      //1 chu ky may
+00DD 7B96            179     loop3: mov r3,#150       
+00DF 7C96            180     loop4: mov r4,#150       
+00E1 DCFE            181     djnz r4,$                
+00E3 DB08            182     djnz r3,loop2  
+00E5 DA04            183     djnz r2,loop1  
+00E7 22              184     ret      
+00E8 22              185     ret
+                     186     
+00E9                 187     DELAY_2:                         
+00E9 7A0E            188     mov r2,#14       ; 16 <=> 1s// con so nay sai nen khong phai la 1s      //1 chu ky may
+00EB 7BFA            189     loop1: mov r3,#250       
+A51 MACRO ASSEMBLER  MAIN                                                                 06/10/2022 13:53:07 PAGE     4
+
+00ED 7CFA            190     loop2: mov r4,#250       
+00EF DCFE            191     djnz r4,$                
+00F1 DBFA            192     djnz r3,loop2  
+00F3 DAF6            193     djnz r2,loop1  
+00F5 22              194     ret      
+                     195     ;//3MOV + 250'djnz r4'x2 (ban_dau) + 250'r3'x(2'djnz r3'+1+250'djnz r4'x2) (ban dau) 
+                     196     ;//+16'r2'x(2'MOVr3,MOVr4'+2'djnz r2' + 250'djnz r4'x2 + 250'r3'x(2'djnz r3'+1+250'djnz r4'
+                             x2))  
+                     197     ;//hinh nhu sai cai 16 nen moi khong dung la 1s
+                     198     
+                     199     
+                     200     ;ma7seg:
+                     201     ;db 03fh,006h,05bh,04fh,066h,06dh,07dh,007h,07fh,06fh
+00F6                 202     ma7seg:
+00F6 C0F9A4B0        203     db 0c0h, 0f9h, 0a4h, 0b0h, 99h, 92h, 82h, 0f8h, 80h, 90h
+00FA 999282F8                
+00FE 8090                    
+                     204     end
+A51 MACRO ASSEMBLER  MAIN                                                                 06/10/2022 13:53:07 PAGE     5
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ALE. . . . . . . .  B ADDR   0090H.5 A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+BCD_7SEG . . . . .  C ADDR   0099H   A   
+BUTTON_INC . . . .  N NUMB   0042H   A   
+BUTTON_OK. . . . .  N NUMB   0043H   A   
+CHUC . . . . . . .  B ADDR   0090H.1 A   
+CONVERT. . . . . .  C ADDR   006EH   A   
+DELAY_1. . . . . .  C ADDR   00DBH   A   
+DELAY_2. . . . . .  C ADDR   00E9H   A   
+DONVI. . . . . . .  B ADDR   0090H.0 A   
+EOC. . . . . . . .  B ADDR   0090H.4 A   
+HEX_BCD. . . . . .  C ADDR   0087H   A   
+INC_ . . . . . . .  C ADDR   0045H   A   
+INC_SET. . . . . .  N NUMB   0040H   A   
+LED. . . . . . . .  B ADDR   00A0H.0 A   
+LED_ORANGE . . . .  B ADDR   00A0H.7 A   
+LED_WARNING. . . .  C ADDR   00CEH   A   
+LED_WHITE. . . . .  B ADDR   0090H.7 A   
+LOOP1. . . . . . .  C ADDR   00EBH   A   
+LOOP2. . . . . . .  C ADDR   00EDH   A   
+LOOP3. . . . . . .  C ADDR   00DDH   A   
+LOOP4. . . . . . .  C ADDR   00DFH   A   
+MA7SEG . . . . . .  C ADDR   00F6H   A   
+MAIN . . . . . . .  C ADDR   005FH   A   
+NEXT . . . . . . .  C ADDR   0062H   A   
+NEXT_1 . . . . . .  C ADDR   0040H   A   
+NEXT_2 . . . . . .  C ADDR   004DH   A   
+NOT_EQUAL. . . . .  C ADDR   0082H   A   
+NOT_EQ_INC_SET . .  C ADDR   003BH   A   
+NUM. . . . . . . .  D ADDR   0080H   A   
+NUM_SET. . . . . .  N NUMB   0044H   A   
+NUM_SET_NOT_EQU. .  C ADDR   005BH   A   
+OK_SET . . . . . .  N NUMB   0041H   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+P3 . . . . . . . .  D ADDR   00B0H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+SETUP. . . . . . .  C ADDR   0011H   A   
+SHOW . . . . . . .  C ADDR   00ACH   A   
+START. . . . . . .  B ADDR   0090H.6 A   
+TEST . . . . . . .  N NUMB   0045H   A   
+TRAM . . . . . . .  B ADDR   0090H.2 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
