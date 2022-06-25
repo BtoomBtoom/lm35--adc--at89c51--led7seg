@@ -1,0 +1,667 @@
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\main.obj
+ASSEMBLER INVOKED BY: D:\Program_Files\Keil_v5\C51\BIN\A51.EXE main.a51 SET(SMALL) DEBUG PRINT(.\Listings\main.lst) OBJE
+                      CT(.\Objects\main.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;MAIN
+                       2     ;=========================DEFINE=======================================
+  0080                 3     num equ p0
+  0091                 4     nghin bit p1.1
+  0092                 5     tram bit p1.2
+  0093                 6     chuc bit p1.3
+  0094                 7     donvi bit p1.4
+                       8     
+                       9             
+  0040                10     inc_set equ 40h
+  0041                11     ok_set equ 41h
+  0042                12     button_inc equ 42h
+  0043                13     button_ok equ 43h
+  0044                14     num_set equ 44h
+  0045                15     test equ 45h
+  0046                16     delay_count equ 46h
+  0047                17     sum_of_sample equ 47h
+  0048                18     average_of_sample equ 48h
+  0049                19     sample_count equ 49h
+  0050                20     sample equ 50h
+                      21             
+  0051                22     gia_tri_don_vi equ 51h
+  0052                23     gia_tri_chuc equ 52h
+  0053                24     gia_tri_tram equ 53h
+  0054                25     gia_tri_nghin equ 54h
+  0055                26     chu_so equ 55h
+                      27             
+  00B6                28     wr_ bit p3.6    ;allow converting 
+  0097                29     intr_ bit p1.7  ;converting succeed
+  00B7                30     rd_ bit p3.7    ;allow communicating    
+                      31             
+  0090                32     spk bit p1.0
+  00B1                33     led_orange bit p3.1                      
+  00B2                34     led_white bit p3.2                       
+  00B0                35     led_interrupt bit p3.0
+                      36     ;=================================================================      
+                      37             
+                      38             
+0000                  39     org 00h
+0000 020097           40     ljmp START_X                             
+                      41             
+                      42     
+000B                  43     org 000Bh        
+000B 020030           44     ljmp 030h
+                      45     
+0030                  46     org 030h
+                      47     ;=========================TIMER_0_INTERRUPT========================
+0030 E546             48     MOV a, delay_count
+0032 B4FA13           49     cjne a, #250, TIMER0_NEXT
+0035 754600           50     MOV delay_count, #0
+0038 E590             51     mov a, p1                
+003A 5401             52     anl a, #01h              
+003C B4010F           53     cjne a,#01h, TURN_ON             
+003F C290             54     clr spk
+0041 120292           55     lcall OFF_WARNING
+0044 120299           56     lcall TIMER0_SETUP_FOR_WARNING
+0047 32               57     reti
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     2
+
+0048                  58     TIMER0_NEXT:
+0048 0546             59     INC delay_count
+004A 120299           60     lcall TIMER0_SETUP_FOR_WARNING
+004D 32               61     reti
+004E                  62     TURN_ON:
+004E D290             63     setb spk
+0050 120282           64     lcall SHOW_WARNING
+0053 120299           65     lcall TIMER0_SETUP_FOR_WARNING
+0056 32               66     reti
+                      67     ;============================================================================
+                      68     
+                      69     
+                      70     
+001B                  71     org 001Bh
+001B 020080           72     ljmp 0080h
+                      73     
+0080                  74     org 0080h
+                      75     ;=============================TIMER_1_INTERRUPT===============================
+0080 D2B0             76     setb led_interrupt
+                      77     ;lcall DELAY_2
+                      78     ;clr led_interrupt
+                      79     ;lcall DELAY_2
+0082 E546             80     mov a, delay_count
+0084 B4280A           81     cjne a, #40, TIMER1_NEXT                         
+0087 754600           82     mov delay_count, #0
+008A 1201A3           83     lcall CONVERT
+008D 1202A9           84     lcall TIMER1_SETUP_FOR_MAIN
+0090 32               85     reti
+0091                  86     TIMER1_NEXT:
+0091 0546             87     inc delay_count
+0093 1202A9           88     lcall TIMER1_SETUP_FOR_MAIN
+0096 32               89     reti
+                      90     ;==================================end===========================================
+                      91     
+                      92     
+                      93     
+                      94     
+                      95     
+                      96     ;=======================set up parameters=========================================
+0097                  97     START_X:                         
+0097 754080           98     mov inc_set, #80h                
+009A 754140           99     mov ok_set, #40h                 
+009D 754400          100     mov num_set, #00h                
+00A0 75A0FF          101     mov p2, #0ffh            
+00A3 7590FF          102     mov p1,#0ffh             
+00A6 7400            103     mov a, #00h    
+00A8 75B0FF          104     mov p3, #0ffh            
+00AB 754700          105     mov sum_of_sample, #00h
+00AE 754600          106     mov delay_count, #00h
+00B1 755500          107     mov chu_so, #00h
+00B4 755100          108     mov gia_tri_don_vi, #00h
+00B7 755200          109     mov gia_tri_chuc, #00h
+00BA 755300          110     mov gia_tri_tram, #00h
+00BD 755400          111     mov gia_tri_nghin, #00h
+                     112     
+00C0 C2B0            113     clr p3.0
+00C2 C2B1            114     clr p3.1
+00C4 C2B2            115     clr p3.2
+00C6 C290            116     clr spk
+                     117     ;==================================================================================
+                     118     
+                     119     
+                     120     
+                     121     ;=========================================set up upper limit======================
+00C8                 122     SETUP:                          
+00C8 C3              123     clr c
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     3
+
+00C9 D2B1            124     setb led_orange
+00CB 859042          125     mov button_inc, p1               
+00CE 534240          126     anl button_inc, #40h             
+00D1 E542            127     mov a, button_inc
+00D3 8540F0          128     mov b, inc_set
+00D6 B5F013          129     cjne a,b, NOT_EQ_INC_SET                 
+                     130     ;mov a, num_set
+                     131     ;lcall HEX_BCD
+                     132     ;lcall BCD_7SEG
+                     133     ;lcall SHOW
+00D9 1201DD          134     lcall SHOW_SETUP
+                     135     
+00DC 859043          136     mov button_ok, p1                
+00DF 534320          137     anl button_ok, #20h              
+00E2 E543            138     mov a, button_ok
+00E4 8541F0          139     mov b, ok_set
+00E7 B5F05A          140     cjne a,b, NOT_EQ_OK_SET
+                     141     ;cjne a,#40h, MAIN              //neu bam nut button_ok thi thoat khoi cai SETUP
+00EA 80DC            142     sjmp SETUP
+                     143     
+00EC                 144     NOT_EQ_INC_SET:
+00EC E542            145     mov a, button_inc
+00EE B44008          146     cjne a, #40h, INC_
+00F1                 147     NEXT_1:
+00F1 854240          148     mov inc_set, button_inc
+00F4 1201DD          149     lcall SHOW_SETUP
+00F7 80CF            150     JMP SETUP
+                     151     
+00F9                 152     INC_:
+00F9 E555            153     mov a, chu_so
+00FB B4000F          154     cjne a, #00h, NOT_DON_VI
+00FE E551            155     mov a, gia_tri_don_vi
+0100 04              156     inc a
+0101 F551            157     mov gia_tri_don_vi, a
+0103 B40A05          158     cjne a, #10, DON_VI_10
+0106 755100          159     mov gia_tri_don_vi, #0h
+0109 80E6            160     jmp NEXT_1
+                     161     
+010B                 162     DON_VI_10:
+010B 80E4            163     jmp NEXT_1
+                     164     
+010D                 165     NOT_DON_VI:
+010D E555            166     mov a, chu_so
+010F B4010F          167     cjne a, #01h, NOT_CHUC
+0112 E552            168     mov a, gia_tri_chuc
+0114 04              169     inc a
+0115 F552            170     mov gia_tri_chuc, a
+0117 B40A05          171     cjne a, #10, CHUC_10
+011A 755200          172     mov gia_tri_chuc, #0h
+011D 80D2            173     jmp NEXT_1
+                     174     
+011F                 175     CHUC_10:
+011F 80D0            176     jmp NEXT_1
+                     177     
+0121                 178     NOT_CHUC:
+0121 E555            179     mov a, chu_so
+0123 B4020F          180     cjne a, #02h, NOT_TRAM
+0126 E553            181     mov a, gia_tri_tram
+0128 B40105          182     cjne a,#1, CHUYEN_TRAM_THANH_1
+012B 755300          183     mov gia_tri_tram, #0
+012E 80C1            184     jmp NEXT_1
+0130                 185     CHUYEN_TRAM_THANH_1:
+0130 755301          186     mov gia_tri_tram, #1
+0133 80BC            187     jmp NEXT_1
+                     188     
+                     189     
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     4
+
+0135                 190     NOT_TRAM:
+0135 E554            191     mov a, gia_tri_nghin
+0137 B40105          192     cjne a, #01h, CHUYEN_NGHIN_THANH_1
+013A 755400          193     mov gia_tri_nghin, #00h
+013D 80B2            194     jmp NEXT_1
+013F                 195     CHUYEN_NGHIN_THANH_1:
+013F 755401          196     mov gia_tri_nghin, #01h
+0142 80AD            197     jmp NEXT_1
+                     198     
+                     199     
+0144                 200     NOT_EQ_OK_SET:
+0144 E543            201     mov a, button_ok
+0146 B42008          202     cjne a, #20h, BAM_NUT_OK                                 
+0149                 203     NEXT_2:
+0149 854341          204     mov ok_set, button_ok
+014C 1201DD          205     lcall SHOW_SETUP
+014F 01C8            206     jmp SETUP
+                     207     
+0151                 208     BAM_NUT_OK:
+0151 E555            209     mov a, chu_so
+0153 B4030C          210     cjne a, #03h, CHU_SO_KHAC_3
+0156                 211     NEU_CHU_SO_BANG_3:
+0156 E554            212     mov a, gia_tri_nghin
+0158 B40005          213     cjne a, #0, GIA_TRI_NGHIN_BANG_1
+015B 755500          214     mov chu_so, #0h
+015E 80E9            215     jmp NEXT_2
+                     216     
+0160                 217     GIA_TRI_NGHIN_BANG_1:
+0160 8007            218     jmp MAIN_SETUP
+                     219     
+0162                 220     CHU_SO_KHAC_3:
+0162 E555            221     mov a, chu_so
+0164 04              222     inc a
+0165 F555            223     mov chu_so, a
+0167 80E0            224     jmp NEXT_2
+                     225     ;=========================================================================================
+                     226     
+                     227     
+                     228     ;=======================================calculate upper limit=============================
+0169                 229     MAIN_SETUP:
+0169 E552            230     mov a, gia_tri_chuc
+016B 75F00A          231     mov b, #10
+016E A4              232     mul ab
+016F 2551            233     add a,gia_tri_don_vi
+0171 F544            234     mov num_set, a
+0173 E553            235     mov a, gia_tri_tram
+0175 75F064          236     mov b, #100
+0178 A4              237     mul ab
+0179 2544            238     add a, num_set
+017B F544            239     mov num_set, a
+                     240     ;mov a, num_set
+                     241     
+                     242     ;lcall HEX_BCD
+                     243     ;lcall BCD_7SEG
+                     244     ;lcall SHOW
+                     245     ;jmp MAIN_SETUP
+                     246     
+                     247     ;org 70h        
+                     248     ;=========================================================================================
+                     249     
+                     250     
+                     251     
+                     252     ;==============================================main loop==================================
+017D                 253     MAIN:   
+017D C290            254             clr spk
+017F 754600          255             mov delay_count, #0
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     5
+
+0182 C28C            256             clr TR0
+0184 1201A3          257             lcall CONVERT
+0187 1202A9          258             lcall TIMER1_SETUP_FOR_MAIN              
+                     259                                                                             
+018A                 260             MAIN_NEXT:
+                     261             
+018A C3              262             clr c
+                     263     
+                     264                             
+018B 8544F0          265             mov b, num_set                   
+018E E550            266             mov a, sample
+0190 B5F00C          267             cjne a,b,NOT_EQUAL
+                     268     
+0193                 269             NEXT:
+0193 C3              270             clr c
+0194 1201B8          271             lcall HEX_BCD
+0197 1201CA          272             lcall BCD_7SEG
+019A 120223          273             lcall SHOW
+019D 80EB            274             sjmp MAIN_NEXT
+                     275             
+019F                 276             NOT_EQUAL:
+019F 40F2            277             jc NEXT
+                     278             ;jc MAIN
+01A1 4145            279             jmp WARNING
+                     280     
+                     281     ;=========================================================================================
+                     282     
+                     283     
+                     284     
+01A3                 285     CONVERT:
+                     286             ;setb ale
+                     287             ;clr ale
+                     288             ;setb start
+                     289             ;jb eoc,$          //$ chính là dia chi hien tai, cu nhay lai dong nay den khi eoc 
+                             = 1 thi moi sang cau lenh tiep theo
+                     290             ;clr start
+                     291             ;;mov r7,#150
+                     292             ;;de: lcall hienthi
+                     293             ;;djnz r7,de
+                     294             ;mov sample, p2
+                     295             ;;mov b, num_set
+                     296             ;;cjne a,b,NOT_EQUAL
+                     297             ;ret
+                     298     
+01A3 C2B6            299             clr wr_
+01A5 1202B9          300             lcall DELAY_1
+01A8 D2B6            301             setb wr_
+01AA 2097FD          302             jb intr_ ,$
+                     303     
+01AD C2B7            304             clr rd_
+01AF 1202B9          305             lcall DELAY_1
+01B2 85A050          306             mov sample, p2
+01B5 D2B7            307             setb rd_
+01B7 22              308             ret
+                     309     
+                     310     
+                     311     
+01B8                 312     HEX_BCD:                        
+01B8 75F064          313             mov b,#100
+01BB 84              314             div ab                    
+                     315             ;mov 12h,a
+01BC F532            316             mov 32h,a
+01BE E5F0            317             mov a,b
+01C0 75F00A          318             mov b,#10
+01C3 84              319             div ab
+                     320             ;mov 11h,a
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     6
+
+01C4 F531            321             mov 31h,a
+                     322             ;mov 10h,b
+01C6 85F030          323             mov 30h,b
+01C9 22              324             ret
+                     325     
+                     326     
+                     327     
+01CA                 328     BCD_7SEG:
+01CA 9002CB          329             mov dptr,#ma7seg
+                     330             ;mov a,10h
+01CD E530            331             mov a,30h
+01CF 93              332             movc a,@a + dptr
+                     333             ;mov 20h,a                               // 20h chua hang don vi
+01D0 F533            334             mov 33h,a       
+                     335             ;mov a,11h
+01D2 E531            336             mov a,31h
+01D4 93              337             movc a,@a + dptr                         
+                     338             ;mov 21h,a                              // 21h chua hang chuc
+01D5 F534            339             mov 34h,a
+                     340             ;mov a,12h
+01D7 E532            341             mov a,32h
+01D9 93              342             movc a,@a + dptr
+                     343             ;mov 22h,a                              // 22h chua hang tram
+01DA F535            344             mov 35h,a
+01DC 22              345             ret
+                     346     
+01DD                 347     SHOW_SETUP:
+01DD 9002CB          348             mov dptr, #ma7seg
+01E0 E551            349             mov a, gia_tri_don_vi
+01E2 93              350             movc a, @a + dptr
+01E3 F580            351             mov num, a
+01E5 D294            352             setb donvi
+01E7 1202B9          353             lcall DELAY_1
+01EA 5390E1          354             anl p1, #0e1h                    
+01ED 9002CB          355             mov dptr, #ma7seg
+01F0 E552            356             mov a, gia_tri_chuc
+01F2 93              357             movc a, @a + dptr
+01F3 F580            358             mov num, a
+01F5 D293            359             setb chuc
+01F7 1202B9          360             lcall DELAY_1
+01FA 5390E1          361             anl p1, #0e1h
+01FD 9002CB          362             mov dptr, #ma7seg
+0200 E553            363             mov a, gia_tri_tram
+0202 93              364             movc a, @a + dptr
+0203 F580            365             mov num, a
+0205 D292            366             setb tram
+0207 1202B9          367             lcall DELAY_1
+020A 5390E1          368             anl p1, #0e1h
+020D 9002CB          369             mov dptr, #ma7seg
+0210 E554            370             mov a, gia_tri_nghin
+0212 93              371             movc a, @a + dptr
+0213 F580            372             mov num, a
+0215 D291            373             setb nghin
+0217 1202B9          374             lcall DELAY_1
+021A 5390E1          375             anl p1, #0e1h
+021D 22              376             ret
+                     377     
+                     378     
+021E                 379     TO_MAIN:
+021E 754600          380     mov delay_count, #0
+0221 217D            381     jmp MAIN
+                     382     
+0223                 383     SHOW:
+                     384             ;mov num,20h
+0223 853380          385             mov num,33h
+0226 D294            386             setb donvi
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     7
+
+0228 1202B9          387             lcall DELAY_1
+022B 5390E1          388             anl p1, #0e1h                    
+                     389     
+                     390             ;mov num,21h
+022E 853480          391             mov num,34h
+0231 D293            392             setb chuc
+0233 1202B9          393             lcall DELAY_1
+0236 5390E1          394             anl p1, #0e1h      
+                     395     
+                     396             ;mov num,22h
+0239 853580          397             mov num,35h
+023C D292            398             setb tram
+023E 1202B9          399             lcall DELAY_1
+0241 5390E1          400             anl p1, #0e1h
+0244 22              401             ret
+                     402     
+                     403     
+0245                 404     WARNING:
+0245 C28E            405             clr TR1                          
+0247 C2B0            406             clr led_interrupt
+0249 D290            407             setb spk
+024B 120282          408             lcall SHOW_WARNING
+024E 754600          409             MOV delay_count, #0  
+0251 120299          410             lcall TIMER0_SETUP_FOR_WARNING
+                     411             ;clr TCON.2     //trigger by low level signal
+                     412             ;setb IE.2
+                     413             ;setb IE.7
+0254                 414     WARNING_NEXT:
+                     415             ;setb led
+                     416             ;lcall SHOW_WARNING
+                     417             ;lcall DELAY_2
+                     418             ;clr led
+                     419             ;lcall OFF_WARNING                                                                 
+                                  <<<<<<<<<<<<<--
+                     420             ;lcall DELAY_2
+0254 859043          421             mov button_ok, p1                
+0257 534320          422             anl button_ok, #20h              
+025A E543            423             mov a, button_ok
+                     424             ;mov b, ok_set
+025C B42002          425             cjne a,#20h, RESET               
+025F 80F3            426             jmp WARNING_NEXT
+                     427     
+                     428     
+0261                 429     RESET:  
+                     430     ;       clr TR0                         //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                     431             ;setb ale
+                     432             ;clr ale
+                     433             ;setb start
+                     434             ;jb eoc,$          //$ chính là dia chi hien tai, cu nhay lai dong nay den khi eoc 
+                             = 1 thi moi sang cau lenh tiep theo
+                     435             ;clr start
+                     436             ;;mov r7,#150
+                     437             ;;de: lcall hienthi
+                     438             ;;djnz r7,de
+                     439             ;mov a,p2
+0261 C2B6            440             clr wr_
+0263 1202B9          441             lcall DELAY_1
+0266 D2B6            442             setb wr_
+0268 2097FD          443             jb intr_ ,$
+                     444                     
+026B C2B7            445             clr rd_
+026D 1202B9          446             lcall DELAY_1
+0270 E5A0            447             mov a, p2
+0272 D2B7            448             setb rd_
+                     449     
+0274 8544F0          450             mov b, num_set
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     8
+
+0277 D2B2            451             setb led_white
+0279 B5F002          452             cjne a,b,NOT_EQUAL_1
+                     453     ;       setb TR0
+027C 80D6            454             jmp WARNING_NEXT
+027E                 455             NOT_EQUAL_1:
+                     456     ;       setb TR0                                //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                             <<
+027E 409E            457             jc TO_MAIN
+0280 80D2            458             jmp WARNING_NEXT
+                     459     
+0282                 460     SHOW_WARNING:
+                     461             ;mov num,20h
+0282 7580BF          462             mov num,#0bfh
+0285 D294            463             setb donvi
+                     464             ;mov num,21h
+0287 7580BF          465             mov num,#0bfh
+028A D293            466             setb chuc
+                     467             ;mov num,22h
+028C 7580BF          468             mov num,#0bfh
+028F D292            469             setb tram
+0291 22              470             ret
+                     471     
+0292                 472     OFF_WARNING:
+0292 C294            473             clr donvi
+0294 C293            474             clr chuc
+0296 C292            475             clr tram
+0298 22              476             ret
+                     477     
+0299                 478     TIMER0_SETUP_FOR_WARNING:
+0299 D2AF            479             setb EA          
+029B D2A9            480             setb ET0         
+029D 758901          481             MOV TMOD, #01h    
+02A0 758CF0          482             MOV TH0, #0F0h   
+02A3 758A60          483             MOV TL0, #060h  
+02A6 D28C            484             setb TR0         
+02A8 22              485             ret
+                     486     
+02A9                 487     TIMER1_SETUP_FOR_MAIN:
+02A9 D2AF            488             setb EA          
+02AB D2AB            489             setb ET1         
+02AD 758910          490             mov TMOD, #10h                   
+02B0 758D63          491             mov TH1, #063h                   
+02B3 758BC0          492             mov TL1, #0C0h
+02B6 D28E            493             setb TR1         
+02B8 22              494             ret 
+                     495     
+                     496     
+02B9                 497     DELAY_1:
+02B9 7F0A            498             mov r7,#10                               
+02BB DFFE            499             djnz r7,$
+                     500             ;mov r2,#1       ; 16 <=> 1s// con so nay sai nen khong phai la 1s      //1 chu ky 
+                             may
+                     501             ;loop3: mov r3,#150     //r3=250 //1 chu ky may
+                     502             ;loop4: mov r4,#150     //r4=250        //1 chu ky may
+                     503             ;djnz r4,$              //giam tai cho khi nao r4=0 thi thuc hien lenh ke tiep , 2 
+                             chu ky may
+                     504             ;djnz r3,loop2 //r3-=1; if r3!=0 jump to loop2 else next instruction , 2 chu ky may
+                     505             ;djnz r2,loop1 //r2-=1; if r2!=0 jump to loop2 else next instruction , 2 chu ky may
+                     506             ;ret    //2 chu ky may
+02BD 22              507             ret
+                     508     
+02BE                 509     DELAY_2:                         
+02BE 7A0E            510             mov r2,#14       ; 16 <=> 1s// con so nay sai nen khong phai la 1s      //1 chu ky 
+                             may
+02C0 7BFA            511             loop1: mov r3,#250       
+02C2 7CFA            512             loop2: mov r4,#250       
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE     9
+
+02C4 DCFE            513             djnz r4,$                
+02C6 DBFA            514             djnz r3,loop2  
+02C8 DAF6            515             djnz r2,loop1  
+02CA 22              516             ret      
+                     517             ;//3MOV + 250'djnz r4'x2 (ban_dau) + 250'r3'x(2'djnz r3'+1+250'djnz r4'x2) (ban dau
+                             ) 
+                     518             ;//+16'r2'x(2'MOVr3,MOVr4'+2'djnz r2' + 250'djnz r4'x2 + 250'r3'x(2'djnz r3'+1+250'
+                             djnz r4'x2))  
+                     519             ;//hinh nhu sai cai 16 nen moi khong dung la 1s
+                     520     
+                     521     
+                     522     ;ma7seg:
+                     523     ;db 03fh,006h,05bh,04fh,066h,06dh,07dh,007h,07fh,06fh
+02CB                 524     ma7seg:
+02CB C0F9A4B0        525     db 0c0h, 0f9h, 0a4h, 0b0h, 99h, 92h, 82h, 0f8h, 80h, 90h
+02CF 999282F8                
+02D3 8090                    
+                     526     end
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE    10
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E                   T Y P E  V A L U E   ATTRIBUTES
+
+AVERAGE_OF_SAMPLE. . . .  N NUMB   0048H   A   
+B. . . . . . . . . . . .  D ADDR   00F0H   A   
+BAM_NUT_OK . . . . . . .  C ADDR   0151H   A   
+BCD_7SEG . . . . . . . .  C ADDR   01CAH   A   
+BUTTON_INC . . . . . . .  N NUMB   0042H   A   
+BUTTON_OK. . . . . . . .  N NUMB   0043H   A   
+CHUC . . . . . . . . . .  B ADDR   0090H.3 A   
+CHUC_10. . . . . . . . .  C ADDR   011FH   A   
+CHUYEN_NGHIN_THANH_1 . .  C ADDR   013FH   A   
+CHUYEN_TRAM_THANH_1. . .  C ADDR   0130H   A   
+CHU_SO . . . . . . . . .  N NUMB   0055H   A   
+CHU_SO_KHAC_3. . . . . .  C ADDR   0162H   A   
+CONVERT. . . . . . . . .  C ADDR   01A3H   A   
+DELAY_1. . . . . . . . .  C ADDR   02B9H   A   
+DELAY_2. . . . . . . . .  C ADDR   02BEH   A   
+DELAY_COUNT. . . . . . .  N NUMB   0046H   A   
+DONVI. . . . . . . . . .  B ADDR   0090H.4 A   
+DON_VI_10. . . . . . . .  C ADDR   010BH   A   
+EA . . . . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . . . . .  B ADDR   00A8H.1 A   
+ET1. . . . . . . . . . .  B ADDR   00A8H.3 A   
+GIA_TRI_CHUC . . . . . .  N NUMB   0052H   A   
+GIA_TRI_DON_VI . . . . .  N NUMB   0051H   A   
+GIA_TRI_NGHIN. . . . . .  N NUMB   0054H   A   
+GIA_TRI_NGHIN_BANG_1 . .  C ADDR   0160H   A   
+GIA_TRI_TRAM . . . . . .  N NUMB   0053H   A   
+HEX_BCD. . . . . . . . .  C ADDR   01B8H   A   
+INC_ . . . . . . . . . .  C ADDR   00F9H   A   
+INC_SET. . . . . . . . .  N NUMB   0040H   A   
+INTR_. . . . . . . . . .  B ADDR   0090H.7 A   
+LED_INTERRUPT. . . . . .  B ADDR   00B0H.0 A   
+LED_ORANGE . . . . . . .  B ADDR   00B0H.1 A   
+LED_WHITE. . . . . . . .  B ADDR   00B0H.2 A   
+LOOP1. . . . . . . . . .  C ADDR   02C0H   A   
+LOOP2. . . . . . . . . .  C ADDR   02C2H   A   
+MA7SEG . . . . . . . . .  C ADDR   02CBH   A   
+MAIN . . . . . . . . . .  C ADDR   017DH   A   
+MAIN_NEXT. . . . . . . .  C ADDR   018AH   A   
+MAIN_SETUP . . . . . . .  C ADDR   0169H   A   
+NEU_CHU_SO_BANG_3. . . .  C ADDR   0156H   A   
+NEXT . . . . . . . . . .  C ADDR   0193H   A   
+NEXT_1 . . . . . . . . .  C ADDR   00F1H   A   
+NEXT_2 . . . . . . . . .  C ADDR   0149H   A   
+NGHIN. . . . . . . . . .  B ADDR   0090H.1 A   
+NOT_CHUC . . . . . . . .  C ADDR   0121H   A   
+NOT_DON_VI . . . . . . .  C ADDR   010DH   A   
+NOT_EQUAL. . . . . . . .  C ADDR   019FH   A   
+NOT_EQUAL_1. . . . . . .  C ADDR   027EH   A   
+NOT_EQ_INC_SET . . . . .  C ADDR   00ECH   A   
+NOT_EQ_OK_SET. . . . . .  C ADDR   0144H   A   
+NOT_TRAM . . . . . . . .  C ADDR   0135H   A   
+NUM. . . . . . . . . . .  D ADDR   0080H   A   
+NUM_SET. . . . . . . . .  N NUMB   0044H   A   
+OFF_WARNING. . . . . . .  C ADDR   0292H   A   
+OK_SET . . . . . . . . .  N NUMB   0041H   A   
+P0 . . . . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . . . . .  D ADDR   0090H   A   
+P2 . . . . . . . . . . .  D ADDR   00A0H   A   
+P3 . . . . . . . . . . .  D ADDR   00B0H   A   
+RD_. . . . . . . . . . .  B ADDR   00B0H.7 A   
+A51 MACRO ASSEMBLER  MAIN                                                                 06/25/2022 15:40:03 PAGE    11
+
+RESET. . . . . . . . . .  C ADDR   0261H   A   
+SAMPLE . . . . . . . . .  N NUMB   0050H   A   
+SAMPLE_COUNT . . . . . .  N NUMB   0049H   A   
+SETUP. . . . . . . . . .  C ADDR   00C8H   A   
+SHOW . . . . . . . . . .  C ADDR   0223H   A   
+SHOW_SETUP . . . . . . .  C ADDR   01DDH   A   
+SHOW_WARNING . . . . . .  C ADDR   0282H   A   
+SPK. . . . . . . . . . .  B ADDR   0090H.0 A   
+START_X. . . . . . . . .  C ADDR   0097H   A   
+SUM_OF_SAMPLE. . . . . .  N NUMB   0047H   A   
+TEST . . . . . . . . . .  N NUMB   0045H   A   
+TH0. . . . . . . . . . .  D ADDR   008CH   A   
+TH1. . . . . . . . . . .  D ADDR   008DH   A   
+TIMER0_NEXT. . . . . . .  C ADDR   0048H   A   
+TIMER0_SETUP_FOR_WARNING  C ADDR   0299H   A   
+TIMER1_NEXT. . . . . . .  C ADDR   0091H   A   
+TIMER1_SETUP_FOR_MAIN. .  C ADDR   02A9H   A   
+TL0. . . . . . . . . . .  D ADDR   008AH   A   
+TL1. . . . . . . . . . .  D ADDR   008BH   A   
+TMOD . . . . . . . . . .  D ADDR   0089H   A   
+TO_MAIN. . . . . . . . .  C ADDR   021EH   A   
+TR0. . . . . . . . . . .  B ADDR   0088H.4 A   
+TR1. . . . . . . . . . .  B ADDR   0088H.6 A   
+TRAM . . . . . . . . . .  B ADDR   0090H.2 A   
+TURN_ON. . . . . . . . .  C ADDR   004EH   A   
+WARNING. . . . . . . . .  C ADDR   0245H   A   
+WARNING_NEXT . . . . . .  C ADDR   0254H   A   
+WR_. . . . . . . . . . .  B ADDR   00B0H.6 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
